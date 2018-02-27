@@ -77,7 +77,7 @@ var PolylineTextPath = {
         var svg = this._map._renderer._container;
         this._path.setAttribute('id', id);
 
-        if (options.repeat) {
+        if (options.repeat && document.body.contains(this._map._renderer._container)) {
             /* Compute single pattern length */
             var pattern = L.SVG.create('text');
             for (var attr in options.attributes)
