@@ -1,4 +1,5 @@
 /*
+ * Leaflet.TextPath - Shows text along a polyline
  * Inspired by Tom Mac Wright article :
  * http://mapbox.com/osmdev/2012/11/20/getting-serious-about-svg/
  */
@@ -88,7 +89,7 @@ var PolylineTextPath = {
             svg.removeChild(pattern);
 
             /* Create string as long as path */
-            text = new Array(Math.ceil(this._path.getTotalLength() / (alength || 1))).join(text);
+            text = new Array(Math.ceil(isNaN(this._path.getTotalLength() / alength) ? 0 : this._path.getTotalLength() / alength)).join(text);
         }
 
         /* Put it along the path using textPath */
@@ -114,24 +115,41 @@ var PolylineTextPath = {
 
         /* Center text according to the path's bounding box */
         if (options.center) {
-            var textWidth = textNode.getBBox().width;
-            var pathWidth = this._path.getBoundingClientRect().width;
+            var textLength = textNode.getComputedTextLength();
+            var pathLength = this._path.getTotalLength();
             /* Set the position for the left side of the textNode */
-            textNode.setAttribute('dx', ((pathWidth / 2) - (textWidth / 2)));
+            textNode.setAttribute('dx', ((pathLength / 2) - (textLength / 2)));
+        }
+
+        /* Change label rotation (if required) */
+        if (options.orientation) {
+            var rotateAngle = 0;
+            switch (options.orientation) {
+                case 'flip':
+                    rotateAngle = 180;
+                    break;
+                case 'perpendicular':
+                    rotateAngle = 90;
+                    break;
+                default:
+                    rotateAngle = options.orientation;
+            }
+
+            var rotatecenterX = (textNode.getBBox().x + textNode.getBBox().width / 2);
+            var rotatecenterY = (textNode.getBBox().y + textNode.getBBox().height / 2);
+            textNode.setAttribute('transform','rotate(' + rotateAngle + ' '  + rotatecenterX + ' ' + rotatecenterY + ')');
         }
 
         /* Initialize mouse events for the additional nodes */
-        if (this.options.clickable) {
+        if (this.options.interactive) {
             if (L.Browser.svg || !L.Browser.vml) {
-                textPath.setAttribute('class', 'leaflet-clickable');
+                textPath.setAttribute('class', 'leaflet-interactive');
             }
 
-            L.DomEvent.on(textNode, 'click', this._onMouseClick, this);
-
-            var events = ['dblclick', 'mousedown', 'mouseover',
+            var events = ['click', 'dblclick', 'mousedown', 'mouseover',
                           'mouseout', 'mousemove', 'contextmenu'];
             for (var i = 0; i < events.length; i++) {
-                L.DomEvent.on(textNode, events[i], this._fireMouseEvent, this);
+                L.DomEvent.on(textNode, events[i], this.fire, this);
             }
         }
 
@@ -151,5 +169,7 @@ L.LayerGroup.include({
         return this;
     }
 });
+
+
 
 })();
